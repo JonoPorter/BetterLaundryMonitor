@@ -1,5 +1,5 @@
 /**
- *  Hubitat Import URL: https://raw.githubusercontent.com/HubitatCommunity/Hubitat-BetterLaundryMonitor/master/BetterLaundryMonitor_Child.groovy
+ *  Hubitat Import URL: https://raw.githubusercontent.com/JonoPorter/BetterLaundryMonitor/master/BetterLaundryMonitor_Child.groovy
  */
 
 /**

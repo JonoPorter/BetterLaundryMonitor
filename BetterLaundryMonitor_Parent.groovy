@@ -88,7 +88,7 @@ def logsOff() {
 
 
 def display() {
-	updateCheck() 
+	//updateCheck() 
 	section{
 		paragraph "\n<hr style='background-color:#1A77C9; height: 1px; border: 0;'></hr>"
 		paragraph "<div style='color:#1A77C9;text-align:center;font-weight:small;font-size:9px'>Developed by: Kevin Tierney, ChrisUthe, C Steele<br/>Version Status: $state.Status<br>Current Version: ${version()} -  ${thisCopyright}</div>"

@@ -195,45 +195,47 @@ def state_inactive(){ "Inactive" }
 def state_finished(){ "Finished" }
 def state_opened(){ "Opened" }
 
-def reportStateChange(newState)
+def setState(newState)
 {
-	def currentState = atomicState.current;
-	if(debugOutput && currentState != newState) log.debug "from ${currentState} to ${newState}"
+	def oldState = atomicState.current;
+	if(debugOutput && oldState != newState)
+	{
+		atomicState.current = newState;
+		log.debug "from ${oldState} to ${newState}"
+	} 
 }
 def isState(state)
 {
 	return atomicState.current == state;
 }
+//state machine: Running -> Inactive -> Finished -> Opened
+//with all states being able to return to Running
 
 def toRunning() {
-	reportStateChange(state_running())
-	atomicState.current = state_running()
-	if(getNowTime() - atomicState.lastActivity >= inactiveTimeout *   1000)
+	setState(state_running())
+	if(getNowTime() - atomicState.lastActivity >= inactiveTimeout * 1000)
 	{
-		atomicState.firstActivity = getNowTime()
 		startCycle();
-		if (debugOutput) log.debug "Sending cycle start notification"
-		send(messageStart)
 	}
 	atomicState.lastActivity = getNowTime()
 }
 def toInactive(evt) {
 	if(!isState(state_running())){ return }
-	reportStateChange(state_inactive())
+	def time =  getNowTime();
 	if(getNowTime() - atomicState.firstActivity >= activeTimeout * 60 * 1000)
 	{
-		atomicState.current = state_inactive()
-		runIn(inactiveTimeout, toFinished)
+		setState(state_inactive())
+		runIn(inactiveTimeout, toFinished,[data: [lastActivity = time]])
 	}
-	atomicState.lastActivity = getNowTime()
+	atomicState.lastActivity = time
 }
-def toFinished(){
-	if(!isState(state_inactive())){ return }
-	reportStateChange(state_finished())
-	atomicState.current = state_finished()
+def toFinished(data){
+	//if its not inactive state or another event has happened since this was started then abort. 
+	if(!isState(state_inactive()) 
+	||data.lastActivity != atomicState.lastActivity  ){ return }
+	setState(state_finished())
 	endCycle();
-	if (debugOutput) log.debug "Sending cycle complete notification"
-	send(message)
+
 	runRepeat(sendRepeat)
 }
 def runRepeat(repeatCount)
@@ -252,21 +254,29 @@ def repeatHandler(data)
 def toOpen()
 {
 	if(!isState(state_finished())){ return }
-	reportStateChange(state_opened())
-	atomicState.current = state_opened()
+	setState(state_opened())
 }
 
 def startCycle()
 {
-	if (switchList) switchList*.off() 
+	atomicState.firstActivity = getNowTime()
 
+	if (debugOutput) log.debug "Sending cycle start notification"
+	send(messageStart)
+
+	if (switchList) switchList*.off() 
+	//legacy states:
 	atomicState.cycleStart = now()
 	atomicState.cycleOn = true
 	updateMyLabel()
 }
 def endCycle()
 {
+	if (debugOutput) log.debug "Sending cycle complete notification"
+	send(message)
+
 	if (switchList) switchList*.on() 
+	//legacy states:
 	atomicState.cycleEnd = now()
 	atomicState.cycleOn = false
 	updateMyLabel()
@@ -277,10 +287,7 @@ private send(msg) {
 }
 private send(msg, speechOnly) {
 	if (!msg) return // no message 
-	if(!speechOnly)
-	{
-		if (textNotification) { textNotification*.deviceNotification(msg) }
-	}
+	if (!speechOnly && textNotification) { textNotification*.deviceNotification(msg) }
 	if (debugOutput) { log.debug "send: $msg" }
 	if (blockIt && blockIt.currentValue("switch") == "on") return // no noise please.
 	if (speechOut) 

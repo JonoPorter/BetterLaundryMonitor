@@ -228,14 +228,14 @@ def toInactive(evt) {
 	if(getNowTime() - atomicState.firstActivity >= activeTimeout * 60 * 1000)
 	{
 		setState(state_inactive())
-		runIn(inactiveTimeout, toFinished,[data: [lastActivity = time]])
+		runIn(inactiveTimeout, toFinished,[data: [lastActivity : time]])
 	}
 	atomicState.lastActivity = time
 }
 def toFinished(data){
 	//if its not inactive state or another event has happened since this was started then abort. 
 	if(!isState(state_inactive()) 
-	||data.lastActivity != atomicState.lastActivity  ){ return }
+	|| data.lastActivity != atomicState.lastActivity  ){ return }
 	setState(state_finished())
 	endCycle();
 
@@ -498,7 +498,7 @@ String fixDateTimeString( eventDate) {
 	if (myDate || myTime) {
 		resultStr = myTime ? "${myDate} at ${myTime}" : "${myDate}"
 	}
-	log.debug "fixed: ${resultStr}"
+ 
 	return resultStr
 }
 

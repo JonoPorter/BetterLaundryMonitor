@@ -198,10 +198,13 @@ def state_opened(){ "Opened" }
 def setState(newState)
 {
 	def oldState = atomicState.current;
-	if(debugOutput && oldState != newState)
+	if(oldState != newState)
 	{
 		atomicState.current = newState;
-		log.debug "from ${oldState} to ${newState}"
+        if(debugOutput)
+        {
+		    log.debug "from ${oldState} to ${newState}"
+        }
 	} 
 }
 def isState(state)
